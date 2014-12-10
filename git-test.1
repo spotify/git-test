@@ -1,0 +1,177 @@
+.TH GIT-TEST "1" "February 2015" "git-test version 1.0.0" "User Commands"
+.SH "NAME"
+git-test \- manual page for git-test version 1.0.0
+.SH "SYNOPSIS"
+git test [options] [refs...]
+
+git test --clear [refs...]
+
+git test --version
+.SH "DESCRIPTION"
+Run tests on each distinct tree in a revision list.
+
+The 99% example is simply:
+.IP
+git test -v
+.PP
+
+If no refs are specified, the default operation is to test the commits on the
+current branch that are not in the origin branch of the same name, nor in
+origin/master. If neither origin/"current branch", nor origin/master exist,
+git-test will refuse to run in order to protect against surprisingly large
+runs. This would happen, for instance, if you're simply not using a remote
+named origin, in a large project with many versions.
+
+This is currently not configurable, but if you want any other ref, you can
+just supply it:
+.IP
+git test -v HEAD ^jeff/development
+.PP
+
+Note that ref exclusions are almost always necessary since not having them
+would mean testing everything since the dawn of time.
+
+For example, this will test all commits on master that have not been pushed
+to origin:
+.IP
+git test \-\-verify="make test" master ^origin/master
+.PP
+Tests are assumed to be deterministic and git-test uses a cache of trees with
+known results to speed up testing. Having non-deterministic, "flappy" tests,
+is a very special circle of hell, but there are some limited facilities for
+dealing with this situation. (Besides the obvious, \fBfixing your tests.\fR)
+
+Running with the verbose option shows progress as it happens:
+.IP
+.nf
+$ git test -v
+the-branch ^origin/the-branch ^origin/master will test 2 commits
+iter commit  tree    result
+0000 83d611b 718c490 ... pass
+0001 0be28e9 6908e0d ... pass
+.fi
+.PP
+Immediately re-running the tests will just take the results from the cache:
+.IP
+.nf
+$ git test -v
+the-branch ^origin/the-branch ^origin/master will test 2 commits
+iter commit  tree    result
+0000 83d611b 718c490 ... pass (cached)
+0001 0be28e9 6908e0d ... pass (cached)
+.fi
+
+.SH "CONFIGURATION"
+To specify what to run on each tree, the arguments --pre, --post and --verify
+can be used to set housekeeping commands and a (required) verifying command.
+The result of the housekeeping commands are ignored, because it's often
+convenient to just let it fail if there is nothing to clean up, or there's no
+artifact to save, or whatever it is you were trying to do.
+
+To avoid having to specify action(s) on every invocation, they can be set
+using git-config feature, preferrably locally:
+.IP
+git config test.verify "make test"
+.IP
+git config test.pre "rm -f test-output"
+.IP
+git config test.post "cp a.out a.out.\\$commit"
+.PP
+Alternatively, these can be set through environment variables
+\fBGIT_TEST_PRE\fR, \fBGIT_TEST_POST\fR and \fBGIT_TEST_VERIFY\fR
+respectively.
+.PP
+.SS "OPTIONS"
+Available options are
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+be more explicit about what is going on
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+be quiet
+.TP
+\fB\-r\fR, \fB\-\-redo\fR ...
+test if [any/pass/fail/both/never] result cached for tree. See the \fBREDO
+MODES\fR
+section
+.TP
+\fB\-o\fR, \fB\-\-output\fR ...
+output directory for reports. See the \fBSAVING OUTPUT\fR section
+.TP
+\fB\-\-pre\fR ..., \fB\-\-post\fR ...
+command to run before and after running the test. Overrides the environment
+variables GIT_TEST_PRE, GIT_TEST_POST and the git-config options test.pre,
+test.post
+.TP
+\fB\-\-verify\fR ...
+the command to run as test. Overrides the environment variable
+GIT_TEST_VERIFY and the git-config option test.verify
+.SS "ACTIONS"
+.TP
+\fB\-\-clear\fR
+clear the results cache
+.TP
+\fB\-\-version\fR
+print version info and quit
+.SH "REDO MODES"
+If the tests have false negatives, git-test can be instructed to re-test
+failing commits. For symmetry, re-test everything, (all or any) re-test
+passing tests and the default behavior to never re-test can be specified.
+.TS
+l l .
+Argument	Action
+a, any,  all, always	Always run all test
+p, pass, passed, passing	Retest passed (and flappy) tests
+f, fail, failed, failing	Retest failed (and flappy) tests
+b, both, flap, flappy	Retest only flappy tests
+n, no, none, never	Never retest, always trust cache
+.TE
+(Default: none)
+.SH "SAVING OUTPUT"
+By adding -o/--output to specify where, you can tell git-test to save stdout
+and stderr from the actions in separate files by tree.
+
+Files are created for each tree and symlinked from commit and test-run
+timestamp directories.
+
+Example:
+.nf
+.sp
+reports/
+|-- 1418737218
+|   `-- 0000_pass -> ../tree/f864c32_4aab77c_pass
+|   `-- 0001_pass -> ../tree/da47834_4aab77c_pass
+|-- 1418737342
+|   `-- 0000_pass -> ../tree/da47834_4aab77c_pass
+|-- commit
+|   `-- 6eaff36_pass -> ../tree/f864c32_4aab77c_pass
+|   `-- 9d0234d_pass -> ../tree/da47834_4aab77c_pass
+|-- latest -> 1418737342
+`-- tree
+    |-- da47834_4aab77c_pass
+    `-- f864c32_4aab77c_pass
+.sp
+.fi
+.SH "CLEARING THE CACHE"
+If refs are supplied when clearing the cache, the trees of the specified
+commits will be cleared, even though those exact trees may appear in other
+commits. It is what was requested and doing anything else would likely be
+prohibitively expensive and very confusing.
+.SH "AUTHORS"
+Anders Eurenius <aes@spotify.com>
+.SH "COPYRIGHT"
+Copyright (C) 2015 Spotify AB
+.SH "LICENSE"
+Apache License 2.0
+.SH "SEE ALSO"
+The full documentation for
+.B git-test
+is the source. Whether it conflicts with any other information or not, the
+computer will execute the code, never the documentation.
+
+\fBgit-rebase\fR(1), in particular, the exec feature
+
+\fBgit-bisect\fR(1) might also be of interest
+
+.RE
+For more information, please re-read.

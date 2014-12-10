@@ -1,0 +1,488 @@
+#!/bin/sh
+#
+# Copyright 2014-2015 Spotify AB. All rights reserved.
+#
+# The contents of this file are licensed under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with the
+# License. You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations under
+# the License.
+#
+set -e
+
+VERSION=1.0.0
+
+NONGIT_OK=Yes
+SUBDIRECTORY_OK=Yes
+OPTIONS_KEEPDASHDASH=
+OPTIONS_STUCKLONG=t
+OPTIONS_SPEC="\
+git test [options] [refs...]
+
+git test --clear [refs...]
+
+Run tests on each distinct tree
+
+Example:
+    git test --verify=\"make test\" master ^origin/master
+--
+ Available options are
+v,verbose!      be more explicit about what is going on
+q,quiet!        be quiet
+r,redo=         re-test even if [any/pass/fail/both/no] result cached for tree
+o,output=       output directory for reports
+cache=*         specify cache directory
+pre=            command to run before running tests
+post=           command to run after running tests
+verify=         the command to run as test
+ Actions:
+clear!          clear the results cache
+version!        print version info and quit"
+
+CORE=$(git --exec-path)
+PATH="$CORE:$PATH"
+
+. git-sh-setup
+. git-sh-i18n
+
+CR="$(printf "\r")$(tput el)"
+NL='
+'
+
+IN=3
+OUT=4
+ERR=5
+exec 3<&0
+exec 4>&1
+exec 5>&2
+
+rc=0
+atexit_cleanup() {
+  git checkout -q $starting_point
+  unlock
+  exit $rc
+}
+
+lock() {
+    mkdir -p "$cache"
+    msg="There's a lock dir, as if there is a git-test already in progress."
+    if ! mkdir "$cache"/testing >/dev/null 2>&1 ; then
+	gettext "$msg" 1>& $ERR
+	eval_gettext "(lock: \${cache}/testing)" 1>& $ERR
+	rc=5
+	exit
+    fi
+}
+
+unlock() {
+    if [ -d "$cache"/testing ]; then
+	rmdir "$cache"/testing
+    fi
+}
+
+
+progress () {
+    if [ "$1" = err ] ; then
+	if [ -n "$verbose" ] ; then
+            printf "$CR%04d %s %s " $iteration $short $small 1>& $ERR
+            gettext "$2" 1>& $ERR
+	fi
+    else
+	if [ -z "$GIT_QUIET" ]; then
+	    if [ -n "$verbose" ] ; then
+		printf "$CR" 1>& $ERR
+	    fi
+            printf "%04d %s %s " $iteration $short $small 1>& $OUT
+	    gettext "$2" 1>& $OUT
+	    echo 1>& $OUT
+	fi
+    fi
+}
+
+
+second_word() {
+    echo $2
+}
+
+tree_of_commit() {
+    second_word $(git cat-file -p "$1" | grep tree)
+}
+
+make_output_dirs() {
+    if test -n "$output" ; then
+	mkdir -p "$output"/commit "$output"/tree "$output"/"$now"
+	if test -h "$output"/latest ; then
+	    rm -f "$output"/latest
+	fi
+	ln -s "$now" "$output"/latest
+    fi
+}
+
+
+decide_refs() {
+    if test -n "$*" ; then
+	echo "$*"
+	return
+    fi
+
+    branch="$(git symbolic-ref --short -q HEAD || true)"
+
+    if git rev-parse --symbolic-full-name '@{u}' >/dev/null 2>&1 ; then
+	upstream="$(git rev-parse --symbolic-full-name '@{u}')"
+	args="^${upstream#refs/*/}"
+    else
+        args="";
+    fi
+
+    for remote in $(git remote) ; do
+	remote_master="$(git branch --list --remotes $remote/master)"
+	if [ -n "$remote_master" ] ; then
+	    args="$args ^${remote_master#  }"
+	fi
+	remote_branch="$(git branch --list --remotes $remote/$branch)"
+	if [ -n "$remote_branch" ] ; then
+	    args="$args ^${remote_branch#  }"
+	fi
+    done
+
+    if [ -z "$args" ] ; then
+	gettext "Cowardly refusing to test the entire history.
+(If that's what you really want, you must specify at least HEAD)" >& $ERR
+        rc=5
+    else
+	echo "$branch $args" | tr " " "$NL" | sort | uniq | tr "$NL" " "
+    fi
+}
+
+
+check_cache() {
+    if test -f "$cache/${1}_pass" ; then pass=pass; else pass= ; fi
+    if test -f "$cache/${1}_fail" ; then fail=fail; else fail= ; fi
+
+    echo "$pass$fail"
+}
+
+recheck_cache() {
+    results=$(check_cache $1)
+    if [ "$results" = "passfail" ]; then
+	results=FLAPPY
+    fi
+    echo $results
+}
+
+redo_check() {
+    result=$(check_cache "$1")
+
+    if [ -z "$result" ]; then
+	return
+    elif [ "$redo" = "all" ]; then
+	return
+    elif [ "$redo" = "pass" ] && [ "${result%fail}" = "pass" ]; then
+	return
+    elif [ "$redo" = "fail" ] && [ "${result#pass}" = "fail" ]; then
+	return
+    elif [ "$redo" = "both" ] && [ "${result}" = "passfail" ]; then
+	return
+    elif [ "$result" = "passfail" ]; then
+	echo FLAPPY
+    else
+	echo $result
+    fi
+}
+
+link_result() {
+    dest="../tree/${cache_key}_${result}"
+    iter="$(printf "%s/%s/%04d_%s" "$output" $now $iteration $result)"
+
+    if test -f "$output/tree/${cache_key}_${result}" ; then
+	ln -sf "$dest" "${iter}"
+	ln -sf "$dest" "${output}/commit/${short}_${result}"
+    fi
+
+
+}
+
+
+run_test() {
+    progress err "checkout"
+    git checkout -q $commit
+
+    if test -n "$output" ; then
+	out="${output}/tree/${cache_key}"
+    else
+	out=/dev/null
+    fi
+
+    if test -n "$pre"; then
+	progress err "pre-action"
+	gettext "Running pre-action"            >$out
+	echo "--------"                         >$out
+	eval_gettext "Running: '\$pre'"         >$out
+	( $pre ) >$out 2>&1 || true
+    fi
+
+    gettext "Verifying"                         >$out
+    echo "--------"                             >$out
+    eval_gettext "Running: '\$verify'"          >$out
+    progress err "testing"
+    if ( eval "$verify" ) >$out 2>&1; then
+	result=pass
+    else
+	result=fail
+    fi
+
+    if test -n "$post"; then
+	progress err "post-action"
+	gettext "Running post-action"           >$out
+	echo "--------"                         >$out
+	gettext "Running: '\$post'"             >$out
+	( $post ) >$out 2>&1 || true
+    fi
+
+    if test "$out" != /dev/null ; then
+	mv "${out}" "${out}_${result}"
+    fi
+
+    mkdir -p "${cache}"
+    touch "${cache}/${cache_key}_${result}"
+    echo $result
+}
+
+
+run_tests() {
+    commits=""
+    iteration=0
+    verification="$(echo "$verify" | git hash-object --stdin)"
+    ver="$(git rev-parse --short $verification)"
+
+    if test -n "$verbose" ; then
+	gettext "iter commit  tree    result" 1>& $ERR
+    fi
+
+    for commit in "$@" ; do
+	tree=$(tree_of_commit $commit)
+	small=$(git rev-parse --short $tree)
+	short=$(git rev-parse --short $commit)
+
+	cache_key="${small}_${ver}"
+
+	result=$(redo_check $cache_key)
+
+	if test -n "$result"; then
+	    if test -n "$verbose"; then
+		progress err "cached"
+		progress out "$result (cached)"
+	    fi
+	else
+	    result=$(run_test)
+
+	    if test -n "$verbose"; then
+		overall=$(recheck_cache $cache_key)
+
+		if [ "$result" != "$overall" ]; then
+		    progress out "$result ($overall)"
+		else
+		    progress out "$result"
+		fi
+	    fi
+	fi
+
+	if test "$result" = "fail"; then
+	    rc=5
+	fi
+
+	link_result
+
+	iteration=$(expr $iteration + 1)
+    done
+}
+
+
+GIT_DIR=$(git rev-parse --git-dir || true)
+
+# Defaults
+action=test
+cache=${GIT_TEST_CACHE:-"$GIT_DIR"/test-cache}
+pre=${GIT_TEST_PRE:-$(git config test.pre || true)}
+post=${GIT_TEST_POST:-$(git config test.post || true)}
+verify=${GIT_TEST_VERIFY:-$(git config test.verify || true)}
+
+ALL_PATTERN='^\(a\|all\|any\|always\)\?$'
+FAIL_PATTERN='^\(f\|fail\|failed\|failing\)$'
+PASS_PATTERN='^\(p\|pass\|passed\|passing\)$'
+BOTH_PATTERN='^\(b\|both\|flap\|flappy\)$'
+NONE_PATTERN='^\(n\|no\|none\|never\)$'
+
+parse_redo() {
+    if echo "$1" | grep "$ALL_PATTERN" >/dev/null ; then
+	redo=all
+    elif echo "$1" | grep "$FAIL_PATTERN" >/dev/null ; then
+	redo=fail
+    elif echo "$1" | grep "$PASS_PATTERN" >/dev/null ; then
+	redo=pass
+    elif echo "$1" | grep "$NONE_PATTERN" >/dev/null ; then
+	redo=
+    elif echo "$1" | grep "$BOTH_PATTERN" >/dev/null ; then
+	redo=both
+    else
+	gettext "Unknown redo mode requested"
+	rc=1
+	exit $rc
+    fi
+}
+
+total_argc=$#
+while test $# != 0
+do
+    case $1 in
+	-v|--verbose)
+	    verbose=true
+	    GIT_QUIET=
+	    ;;
+	-q|--quiet)
+	    verbose=
+	    GIT_QUIET=true
+	    git_am_opt="$git_am_opt -q"
+	    ;;
+	-r|--redo)
+	    parse_redo "$2"
+	    shift
+	    ;;
+	--redo=*)
+	    parse_redo "${1#--redo=}"
+	    ;;
+	-o|--output)
+	    output="$2"
+	    shift
+	    ;;
+	--output=*)
+	    output="${1#--output=}"
+	    ;;
+	--cache)
+	    cache="$2"
+	    shift
+	    ;;
+	--cache=*)
+	    cache="${1#--cache=}"
+	    ;;
+	--pre)
+	    pre="$2"
+	    shift
+	    ;;
+	--pre=*)
+	    pre="${1#--pre=}"
+	    ;;
+	--post)
+	    post="$2"
+	    shift
+	    ;;
+	--post=*)
+	    post="${1#--post=}"
+	    ;;
+	--verify)
+	    verify="$2"
+	    shift
+	    ;;
+	--verify=*)
+	    verify="${1#--verify=}"
+	    ;;
+	--clear)
+	    action=clear
+	    ;;
+	--version)
+	    action=version
+	    ;;
+	--)
+	    shift
+	    break
+	    ;;
+    esac
+    shift
+done
+
+if [ $action = version ] ; then
+    echo "git-test version $VERSION"
+    exit 0
+elif [ -z "$GIT_DIR" ] ; then
+    usage
+    exit 5
+else
+    set_reflog_action test
+    require_work_tree_exists
+    cd_to_toplevel
+
+    # Current state
+    starting_point=$(git symbolic-ref --short -q HEAD || git rev-parse HEAD)
+    now=$(date +%s)
+fi
+
+if [ $action = clear ] ; then
+    if test -z "$*" ; then
+	rm -f "$cache"/*_fail "$cache"/*_pass
+    else
+	refs="$(decide_refs "$@")"
+	commits="$(git rev-list --reverse $refs | tr "$NL" " ")"
+	count="$(echo "$commits" | wc -w)"
+
+	if test 1 -gt $count ; then
+	    gettext "List of commits to clear is empty" 1>&2
+	    exit
+	fi
+
+	if test -z "$GIT_QUIET" ; then
+	    args="$*"
+	    eval_gettext "\$args will clear \$count commits"
+	    echo
+	fi
+
+	for commit in $commits; do
+	    tree=$(tree_of_commit $commit)
+	    small=$(git rev-parse --short $tree)
+	    rm -f "$cache"/"$small"_*_fail "$cache"/"$small"_*_pass
+	done
+    fi
+
+    rm -Rf "$cache"/testing
+    exit 0
+fi
+
+if [ -z "$verify" ] ; then
+    gettext "A verification action is required. Specify one using
+  the argument --verify=\"...\"
+or
+  configure it using 'git config test.verify ...'
+or
+  the environment variable GIT_TEST_VERIFY
+"
+    echo
+    exit 5
+fi
+
+refs="$(decide_refs "$@")"
+refs="${refs% }"
+commits="$(git rev-list --reverse $refs | tr "$NL" " ")"
+count="$(echo "$commits" | wc -w)"
+
+if test 1 -gt $count ; then
+    gettext 'List of commits to test is empty' 1>&2
+    exit
+elif test -z "$GIT_QUIET" ; then
+    eval_gettext "\$refs will test \$count commits
+"
+fi
+
+trap "atexit_cleanup" INT TERM EXIT
+
+lock
+
+make_output_dirs
+
+run_tests $commits
+
+exit 1
