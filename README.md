@@ -68,12 +68,30 @@ cache correctly.)
 
 ## Installation
 
-Aside from the [Debian](https://www.debian.org) packaging, you can also
-install from source. It's a single POSIX shell script that uses core git. All
-that's required for plain `git test` to work, besides git, of course, is that
-git-test needs to be somewhere in the PATH (or GIT_EXEC_PATH).
+### From source
+
+Aside from the packaging, you can also install from source. It's a single
+POSIX shell script that uses core git, so all that's required for plain `git
+test` to work, besides git, of course, is that git-test needs to be somewhere
+in the PATH or GIT_EXEC_PATH.
 
 You can install from source by doing the following:
 
-    $ install -b git-test /usr/local/bin
+    $ install git-test   /usr/local/bin
     $ install git-test.1 /usr/local/share/man1
+
+Or just add this directory to your PATH environment variable.
+
+### Debian GNU/Linux
+
+The usual
+
+    $ fakeroot debian/rules binary
+
+Should give you a Debian package
+
+### Arch Linux
+
+With Arch Linux, you can use the provided `PKGBUILD` file. Simply download the
+file and run `makepkg` in the same directory as the file. It will always build
+the latest `git` version of this package, even if you have an old checkout.
