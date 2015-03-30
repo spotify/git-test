@@ -261,8 +261,9 @@ run_tests() {
     verification="$(echo "$verify" | git hash-object --stdin)"
     ver="$(git rev-parse --short $verification)"
 
-    if test -n "$verbose" ; then
+    if [ -n "$verbose" ]; then
 	gettext "iter commit  tree    result" 1>& $ERR
+	echo 1>& $ERR
     fi
 
     for commit in "$@" ; do
