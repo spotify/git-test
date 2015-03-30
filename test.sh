@@ -372,6 +372,11 @@ git branch --set-upstream-to=upstream           >/dev/null 2>&1 ; check
 $PROJECT -v --verify=true                            >out 2>err ; check
 grep ".upstream.*will test *2 commits" out      >/dev/null 2>&1 ; check
 
+info "Should show commit table header"
+$PROJECT --clear                                >/dev/null 2>&1 ; check
+$PROJECT -v --verify=true                            >out 2>err ; check
+grep "^iter commit  tree    result$" err        >/dev/null 2>&1 ; check
+
 
 info "TODO: check output report feature/s"
 
