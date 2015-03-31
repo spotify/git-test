@@ -1,3 +1,10 @@
+git-test (1.0.1) UNRELEASED; urgency=low
+
+  * Add missing newline after table header, fixes #1
+  * Ignore stderr when looking up git-dir, fixes #2
+
+ -- Anders Eurenius <aes@spotify.com>  Tue, 31 Mar 2015 21:05:33 +0200
+
 git-test (1.0.0) unstable; urgency=low
 
   * Initial Release.
