@@ -305,7 +305,7 @@ run_tests() {
 }
 
 
-GIT_DIR=$(git rev-parse --git-dir || true)
+GIT_DIR=$(git rev-parse --git-dir 2>/dev/null || true)
 
 # Defaults
 action=test
