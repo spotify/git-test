@@ -95,3 +95,9 @@ Should give you a Debian package
 With Arch Linux, you can use the provided `PKGBUILD` file. Simply download the
 file and run `makepkg` in the same directory as the file. It will always build
 the latest `git` version of this package, even if you have an old checkout.
+
+### OS X
+
+Also the usual (Homebrew)
+
+	$ brew install git-test
