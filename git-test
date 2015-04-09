@@ -262,8 +262,8 @@ run_tests() {
     ver="$(git rev-parse --short $verification)"
 
     if [ -n "$verbose" ]; then
-	gettext "iter commit  tree    result" 1>& $ERR
-	echo 1>& $ERR
+	gettext "iter commit  tree    result"
+	echo
     fi
 
     for commit in "$@" ; do
