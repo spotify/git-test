@@ -55,7 +55,6 @@ CR="$(printf "\r")$(tput el)"
 NL='
 '
 
-IN=3
 OUT=4
 ERR=5
 exec 3<&0
@@ -64,7 +63,7 @@ exec 5>&2
 
 rc=0
 atexit_cleanup() {
-  git checkout -q $starting_point
+  git checkout -q "$starting_point"
   unlock
   exit $rc
 }
@@ -90,7 +89,7 @@ unlock() {
 progress () {
     if [ "$1" = err ] ; then
 	if [ -n "$verbose" ] ; then
-            printf "$CR%04d %s %s " $iteration $short $small 1>& $ERR
+            printf "$CR%04d %s %s " "$iteration" "$short" "$small" 1>& $ERR
             gettext "$2" 1>& $ERR
 	fi
     else
@@ -98,7 +97,7 @@ progress () {
 	    if [ -n "$verbose" ] ; then
 		printf "$CR" 1>& $ERR
 	    fi
-            printf "%04d %s %s " $iteration $short $small 1>& $OUT
+            printf "%04d %s %s " "$iteration" "$short" "$small" 1>& $OUT
 	    gettext "$2" 1>& $OUT
 	    echo 1>& $OUT
 	fi
@@ -141,11 +140,11 @@ decide_refs() {
     fi
 
     for remote in $(git remote) ; do
-	remote_master="$(git branch --list --remotes $remote/master)"
+	remote_master="$(git branch --list --remotes "$remote/master")"
 	if [ -n "$remote_master" ] ; then
 	    args="$args ^${remote_master#  }"
 	fi
-	remote_branch="$(git branch --list --remotes $remote/$branch)"
+	remote_branch="$(git branch --list --remotes "$remote/$branch")"
 	if [ -n "$remote_branch" ] ; then
 	    args="$args ^${remote_branch#  }"
 	fi
@@ -162,14 +161,14 @@ decide_refs() {
 
 
 check_cache() {
-    if test -f "$cache/${1}_pass" ; then pass=pass; else pass= ; fi
-    if test -f "$cache/${1}_fail" ; then fail=fail; else fail= ; fi
+    if test -f "$cache/${1}_pass" ; then pass=pass; else pass='' ; fi
+    if test -f "$cache/${1}_fail" ; then fail=fail; else fail='' ; fi
 
     echo "$pass$fail"
 }
 
 recheck_cache() {
-    results=$(check_cache $1)
+    results=$(check_cache "$1")
     if [ "$results" = "passfail" ]; then
 	results=FLAPPY
     fi
@@ -192,13 +191,13 @@ redo_check() {
     elif [ "$result" = "passfail" ]; then
 	echo FLAPPY
     else
-	echo $result
+	echo "$result"
     fi
 }
 
 link_result() {
     dest="../tree/${cache_key}_${result}"
-    iter="$(printf "%s/%s/%04d_%s" "$output" $now $iteration $result)"
+    iter="$(printf "%s/%s/%04d_%s" "$output" "$now" "$iteration" "$result")"
 
     if test -f "$output/tree/${cache_key}_${result}" ; then
 	ln -sf "$dest" "${iter}"
@@ -211,7 +210,7 @@ link_result() {
 
 run_test() {
     progress err "checkout"
-    git checkout -q $commit
+    git checkout -q "$commit"
 
     if test -n "$output" ; then
 	out="${output}/tree/${cache_key}"
@@ -259,7 +258,7 @@ run_tests() {
     commits=""
     iteration=0
     verification="$(echo "$verify" | git hash-object --stdin)"
-    ver="$(git rev-parse --short $verification)"
+    ver="$(git rev-parse --short "$verification")"
 
     if [ -n "$verbose" ]; then
 	gettext "iter commit  tree    result"
@@ -267,13 +266,13 @@ run_tests() {
     fi
 
     for commit in "$@" ; do
-	tree=$(tree_of_commit $commit)
-	small=$(git rev-parse --short $tree)
-	short=$(git rev-parse --short $commit)
+	tree=$(tree_of_commit "$commit")
+	small=$(git rev-parse --short "$tree")
+	short=$(git rev-parse --short "$commit")
 
 	cache_key="${small}_${ver}"
 
-	result=$(redo_check $cache_key)
+	result=$(redo_check "$cache_key")
 
 	if test -n "$result"; then
 	    if test -n "$verbose"; then
@@ -284,7 +283,7 @@ run_tests() {
 	    result=$(run_test)
 
 	    if test -n "$verbose"; then
-		overall=$(recheck_cache $cache_key)
+		overall=$(recheck_cache "$cache_key")
 
 		if [ "$result" != "$overall" ]; then
 		    progress out "$result ($overall)"
@@ -338,7 +337,6 @@ parse_redo() {
     fi
 }
 
-total_argc=$#
 while test $# != 0
 do
     case $1 in
@@ -431,7 +429,7 @@ if [ $action = clear ] ; then
 	commits="$(git rev-list --reverse $refs | tr "$NL" " ")"
 	count="$(echo "$commits" | wc -w)"
 
-	if test 1 -gt $count ; then
+	if test 1 -gt "$count" ; then
 	    gettext "List of commits to clear is empty" 1>&2
 	    exit
 	fi
@@ -443,8 +441,8 @@ if [ $action = clear ] ; then
 	fi
 
 	for commit in $commits; do
-	    tree=$(tree_of_commit $commit)
-	    small=$(git rev-parse --short $tree)
+	    tree=$(tree_of_commit "$commit")
+	    small=$(git rev-parse --short "$tree")
 	    rm -f "$cache"/"$small"_*_fail "$cache"/"$small"_*_pass
 	done
     fi
@@ -470,7 +468,7 @@ refs="${refs% }"
 commits="$(git rev-list --reverse $refs | tr "$NL" " ")"
 count="$(echo "$commits" | wc -w)"
 
-if test 1 -gt $count ; then
+if test 1 -gt "$count" ; then
     gettext 'List of commits to test is empty' 1>&2
     exit
 elif test -z "$GIT_QUIET" ; then
