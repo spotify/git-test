@@ -89,7 +89,8 @@ unlock() {
 progress () {
     if [ "$1" = err ] ; then
 	if [ -n "$verbose" ] ; then
-            printf "$CR%04d %s %s " "$iteration" "$short" "$small" 1>& $ERR
+            printf "$CR%04d | %s | %s | " \
+                   "$iteration" "$short" "$small" 1>& $ERR
             gettext "$2" 1>& $ERR
 	fi
     else
@@ -97,7 +98,8 @@ progress () {
 	    if [ -n "$verbose" ] ; then
 		printf "$CR" 1>& $ERR
 	    fi
-            printf "%04d %s %s " "$iteration" "$short" "$small" 1>& $OUT
+            printf "%04d | %s | %s | " \
+                   "$iteration" "$short" "$small" 1>& $OUT
 	    gettext "$2" 1>& $OUT
 	    echo 1>& $OUT
 	fi
@@ -261,7 +263,9 @@ run_tests() {
     ver="$(git rev-parse --short "$verification")"
 
     if [ -n "$verbose" ]; then
-	gettext "iter commit  tree    result"
+	gettext -- "iter | commit  | tree    | result"
+	echo
+	gettext -- "-----|---------|---------|--------------"
 	echo
     fi
 
