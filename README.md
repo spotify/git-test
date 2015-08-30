@@ -55,6 +55,12 @@ To try the test script with different shells:
         sh test.sh -s $sh
     done
 
+Note that since version 1.0.2 the shebang is set to ```/bin/bash```. Other
+shells are now supported on a "patches welcome" basis. (This is largely
+because I couldn't find a shell I could run in my GNU/Linux environment that
+behaves like the OSX (FreeBSD?) `sh` shell, which has very different behaviour
+from all the others.)
+
 To regression test properly:
 
     rev=$(git rev-parse --short HEAD)
