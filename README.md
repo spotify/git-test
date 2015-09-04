@@ -74,6 +74,13 @@ cache correctly.)
 
 ## Installation
 
+### Homebrew (on OS X)
+
+If you have [Homebrew](http://brew.sh/) installed, you can install
+git-test with:
+
+    $ brew install git-test
+
 ### From source
 
 Aside from the packaging, you can also install from source. It's a single
