@@ -1,3 +1,14 @@
+git-test (1.0.2) unstable; urgency=low
+
+  * Set shebang to /bin/bash and explain why
+  * Match table style to github markdown
+  * Fix some unused, underquote ShellCheck warnings
+  * Emit column headers on stdout
+  * Add all_shells, regress scripts
+  * Ignore stderr when looking up git-dir, fixes #2
+
+ -- Anders Eurenius <aes@spotify.com> Sun, 30 Aug 2015 18:05:00 +0200
+
 git-test (1.0.1) UNRELEASED; urgency=low
 
   * Add missing newline after table header, fixes #1
