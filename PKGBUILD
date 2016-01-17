@@ -4,9 +4,9 @@ pkgrel=1
 pkgver=r48.2324a42
 pkgdesc=Git extension to conveniently test all distinct versions
 arch=(any)
-url=https://ghe.spotify.net/tools/git-test
+url=https://github.com/spotify/git-test
 depends=(git)
-source=('git-test-git::git+ssh://git@ghe.spotify.net/tools/git-test.git')
+source=('git-test-git::git+ssh://git@github.com/spotify/git-test.git')
 md5sums=(SKIP)
 
 pkgver() {
