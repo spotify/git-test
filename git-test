@@ -430,7 +430,7 @@ if [ $action = clear ] ; then
 	rm -f "$cache"/*_fail "$cache"/*_pass
     else
 	refs="$(decide_refs "$@")"
-	commits="$(git rev-list --reverse $refs | tr "$NL" " ")"
+	commits="$(git rev-list --reverse $refs -- | tr "$NL" " ")"
 	count="$(echo "$commits" | wc -w)"
 
 	if test 1 -gt "$count" ; then
@@ -469,7 +469,7 @@ fi
 
 refs="$(decide_refs "$@")"
 refs="${refs% }"
-commits="$(git rev-list --reverse $refs | tr "$NL" " ")"
+commits="$(git rev-list --reverse $refs -- | tr "$NL" " ")"
 count="$(echo "$commits" | wc -w)"
 
 if test 1 -gt "$count" ; then

@@ -381,6 +381,14 @@ info "Should just show version, even when not in a repo"
 GIT_DIR=.git/refs $PROJECT --version                 >out 2>err ; check
 grep "Not a git repo" out err                   >/dev/null 2>&1 ; check_fail
 
+info "Should not confuse files and branches"
+$PROJECT --clear                                >/dev/null 2>&1 ; check
+git checkout -b subject                         >/dev/null 2>&1 ; check
+add_commit "x" "differentiate branches"         >/dev/null 2>&1 ; check
+$PROJECT -v --verify=true subject ^master       >out 2>err ; check
+grep "^iter.*commit.*tree.*result$" out err     >/dev/null 2>&1 ; check
+
+
 info "TODO: check output report feature/s"
 
 if [ $verb -ge 1 ]; then
