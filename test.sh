@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright 2014-2015 Spotify AB. All rights reserved.
 #
@@ -15,7 +15,7 @@
 # the License.
 #
 export OPTIONS_SPEC="\
-sh $0 [options]
+bash $0 [options]
 
 Run tests
 
@@ -45,7 +45,7 @@ last=""
 pass=0
 fail=0
 
-shshell=${shshell:-/bin/sh}
+shshell=${shshell:-/bin/bash}
 
 total_argc=$#
 while [ $# != 0 ]
@@ -98,16 +98,16 @@ dot() {
 
     if [ $quit -gt 0 ] && ! [ -n "$1" ]; then
 	if [ $verb -lt 2 ]; then
-	    echo "\n$last"
+	    printf "\n%s\n" "$last"
 	fi
 	exit 5
     fi
 }
 
 info() {
-    last="$@"
+    last="$*"
     if [ $verb -ge 2 ]; then
-	echo "$@"
+	printf "%s\n" "$@"
     fi
 }
 
