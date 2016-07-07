@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright 2014-2015 Spotify AB. All rights reserved.
 #
@@ -15,7 +15,7 @@
 # the License.
 #
 export OPTIONS_SPEC="\
-sh $0 [options]
+bash $0 [options]
 
 Run tests
 
@@ -45,7 +45,7 @@ last=""
 pass=0
 fail=0
 
-shshell=${shshell:-/bin/sh}
+shshell=${shshell:-/bin/bash}
 
 total_argc=$#
 while [ $# != 0 ]
@@ -98,16 +98,16 @@ dot() {
 
     if [ $quit -gt 0 ] && ! [ -n "$1" ]; then
 	if [ $verb -lt 2 ]; then
-	    echo "\n$last"
+	    printf "\n%s\n" "$last"
 	fi
 	exit 5
     fi
 }
 
 info() {
-    last="$@"
+    last="$*"
     if [ $verb -ge 2 ]; then
-	echo "$@"
+	printf "%s\n" "$@"
     fi
 }
 
@@ -380,6 +380,14 @@ grep "^iter.*commit.*tree.*result$" out err     >/dev/null 2>&1 ; check
 info "Should just show version, even when not in a repo"
 GIT_DIR=.git/refs $PROJECT --version                 >out 2>err ; check
 grep "Not a git repo" out err                   >/dev/null 2>&1 ; check_fail
+
+info "Should not confuse files and branches"
+$PROJECT --clear                                >/dev/null 2>&1 ; check
+git checkout -b subject                         >/dev/null 2>&1 ; check
+add_commit "x" "differentiate branches"         >/dev/null 2>&1 ; check
+$PROJECT -v --verify=true subject ^master       >out 2>err ; check
+grep "^iter.*commit.*tree.*result$" out err     >/dev/null 2>&1 ; check
+
 
 info "TODO: check output report feature/s"
 
