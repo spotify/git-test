@@ -260,9 +260,9 @@ run_tests() {
     ver="$(git rev-parse --short "$verification")"
 
     if [ -n "$verbose" ]; then
-	gettext -- "iter | commit  | tree    | result"
+	gettext "iter | commit  | tree    | result"
 	echo
-	gettext -- "-----|---------|---------|--------------"
+	gettext " ----|---------|---------|--------------"
 	echo
     fi
 
