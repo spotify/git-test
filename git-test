@@ -72,10 +72,10 @@ lock() {
     mkdir -p "$cache"
     msg="There's a lock dir, as if there is a git-test already in progress."
     if ! mkdir "$cache"/testing >/dev/null 2>&1 ; then
-	gettext "$msg" 1>& $ERR
-	eval_gettext "(lock: \${cache}/testing)" 1>& $ERR
+	echo "$(eval_gettext "$msg")" 1>& $ERR
+	echo "$(eval_gettext "(lock: \${cache}/testing)")" 1>& $ERR
 	rc=5
-	exit
+	exit 5
     fi
 }
 
@@ -464,6 +464,10 @@ or
     exit 5
 fi
 
+lock
+
+trap "atexit_cleanup" INT TERM EXIT
+
 refs=( $(decide_refs "$@") )
 commits=( $(git rev-list --reverse "${refs[@]}" -- | tr "$NL" " ") )
 count="$(echo "${commits[@]}" | wc -w)"
@@ -474,10 +478,6 @@ if test 1 -gt "$count" ; then
 elif test -z "$GIT_QUIET" ; then
     printf "$(eval_gettext "%s will test %d commits\n")" "${refs[*]}" "$count"
 fi
-
-trap "atexit_cleanup" INT TERM EXIT
-
-lock
 
 make_output_dirs
 
