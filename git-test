@@ -415,6 +415,7 @@ elif [ -z "$GIT_DIR" ] ; then
 else
     set_reflog_action test
     require_work_tree_exists
+    require_clean_work_tree test
     cd_to_toplevel
 
     # Current state
