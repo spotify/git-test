@@ -131,6 +131,12 @@ decide_refs() {
 
     branch="$(git symbolic-ref --short -q HEAD || true)"
 
+    if git config "branch.${branch}.test" ; then
+        args="^$(git config "branch.${branch}.test")"
+    elif git config "test.branch" ; then
+        args="^$(git config test.branch)"
+    fi
+
     if git rev-parse --symbolic-full-name '@{u}' >/dev/null 2>&1 ; then
 	upstream="$(git rev-parse --symbolic-full-name '@{u}')"
 	args="^${upstream#refs/*/}"
