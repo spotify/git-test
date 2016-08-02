@@ -127,13 +127,17 @@ decide_refs() {
 	return
     fi
 
+    local args=""
+    local branch
     branch="$(git symbolic-ref --short -q HEAD || true)"
 
-    if git rev-parse --symbolic-full-name '@{u}' >/dev/null 2>&1 ; then
+    if git config "branch.${branch}.test" >/dev/null 2>&1 ; then
+        args="^$(git config "branch.${branch}.test")"
+    elif git config "test.branch" >/dev/null 2>&1 ; then
+        args="^$(git config test.branch)"
+    elif git rev-parse --symbolic-full-name '@{u}' >/dev/null 2>&1 ; then
 	upstream="$(git rev-parse --symbolic-full-name '@{u}')"
 	args="^${upstream#refs/*/}"
-    else
-        args="";
     fi
 
     for remote in $(git remote) ; do
