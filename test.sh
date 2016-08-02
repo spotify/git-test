@@ -144,7 +144,7 @@ get_tree() {
 }
 
 setup_for_redo() {
-    rm -f .git/test-cache/*
+    rm -rf .git/test-cache/*
     touch .git/test-cache/${tree_a}_${ver}_pass
     touch .git/test-cache/${tree_b}_${ver}_pass # flappy!
     touch .git/test-cache/${tree_b}_${ver}_fail #
@@ -353,6 +353,11 @@ grep "^iter commit" err out                     >/dev/null 2>&1 ; check_fail
 
 info "Should fail with helpful message if lock dir is present"
 mkdir -p .git/test-cache/testing
+$PROJECT -v -ra master                               >out 2>err ; check_fail
+grep "git-test already in progress" err         >/dev/null 2>&1 ; check
+grep "(lock: .*.git/test-cache/testing)" err    >/dev/null 2>&1 ; check
+
+info "Re-running git-test should not remove lock dir"
 $PROJECT -v -ra master                               >out 2>err ; check_fail
 grep "git-test already in progress" err         >/dev/null 2>&1 ; check
 grep "(lock: .*.git/test-cache/testing)" err    >/dev/null 2>&1 ; check
