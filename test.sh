@@ -390,9 +390,14 @@ info "Should not confuse files and branches"
 $PROJECT --clear                                >/dev/null 2>&1 ; check
 git checkout -b subject                         >/dev/null 2>&1 ; check
 add_commit "x" "differentiate branches"         >/dev/null 2>&1 ; check
-$PROJECT -v --verify=true subject ^master       >out 2>err ; check
+$PROJECT -v --verify=true subject ^master            >out 2>err ; check
 grep "^iter.*commit.*tree.*result$" out err     >/dev/null 2>&1 ; check
 
+info "Should refuse to run if work tree is dirty"
+echo "y" > subject
+$PROJECT -v -ra master                               >out 2>err ; check_fail
+grep "Cannot test: You have unstaged changes." err   >/dev/null ; check
+git checkout -- subject                         >/dev/null 2>&1 ; check
 
 info "TODO: check output report feature/s"
 
