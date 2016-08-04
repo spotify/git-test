@@ -74,6 +74,9 @@ cache correctly.)
 
 ## Installation
 
+You can just have the `git-test` script in your `PATH`, but there are other
+options:
+
 ### Homebrew (on OS X)
 
 If you have [Homebrew](http://brew.sh) installed, you can install
