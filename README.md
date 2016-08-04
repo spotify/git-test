@@ -9,7 +9,8 @@ The 99% example is simply:
 
 By default it uses heuristics to try to determine what "local commits" to
 test, but you can supply another ref spec. `git-test` looks at each commit and
-checks the hash of the directory tree against the cache.
+checks the hash of the directory tree against the cache. You can also configure
+a ref (usually a branch) to test against, per repo or or per branch.
 
 From the point of view of `git-test`, a test can be any shell command and a
 test is considered successful if that shell command returns with a `0` exit
