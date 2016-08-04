@@ -88,16 +88,14 @@ unlock() {
 
 progress () {
     if [ "$1" = err ] ; then
-	if [ -n "$verbose" ] ; then
+	if [ -z "$GIT_QUIET" ] ; then
             printf "$CR%04d | %s | %s | " \
                    "$iteration" "$short" "$small" 1>& $ERR
             gettext "$2" 1>& $ERR
 	fi
     else
 	if [ -z "$GIT_QUIET" ]; then
-	    if [ -n "$verbose" ] ; then
-		printf "%s" "$CR" 1>& $ERR
-	    fi
+	    printf "%s" "$CR" 1>& $ERR
             printf "%04d | %s | %s | " \
                    "$iteration" "$short" "$small" 1>& $OUT
 	    gettext "$2" 1>& $OUT
@@ -259,7 +257,7 @@ run_tests() {
     verification="$(echo "$verify" | git hash-object --stdin)"
     ver="$(git rev-parse --short "$verification")"
 
-    if [ -n "$verbose" ]; then
+    if [ -z "$GIT_QUIET" ]; then
 	gettext "iter | commit  | tree    | result"
 	echo
 	gettext " ----|---------|---------|--------------"
@@ -276,14 +274,14 @@ run_tests() {
 	result=$(redo_check "$cache_key")
 
 	if test -n "$result"; then
-	    if test -n "$verbose"; then
+	    if test -z "$GIT_QUIET"; then
 		progress err "cached"
 		progress out "$result (cached)"
 	    fi
 	else
 	    result=$(run_test)
 
-	    if test -n "$verbose"; then
+	    if test -z "$GIT_QUIET"; then
 		overall=$(recheck_cache "$cache_key")
 
 		if [ "$result" != "$overall" ]; then
@@ -342,7 +340,6 @@ while test $# != 0
 do
     case $1 in
 	-v|--verbose)
-	    verbose=true
 	    GIT_QUIET=
 	    ;;
 	-q|--quiet)
