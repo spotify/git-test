@@ -9,14 +9,15 @@ The 99% example is simply:
 
 By default it uses heuristics to try to determine what "local commits" to
 test, but you can supply another ref spec. `git-test` looks at each commit and
-checks the hash of the directory tree against the cache.
+checks the hash of the directory tree against the cache. You can also configure
+a ref (usually a branch) to test against, per repo or or per branch.
 
-From the point of view of `git-test`, a test can be any shell command and a test
-is considered successful if that shell command returns with a `0` exit
-status. This means `git-test` can be used both for specialised tests of a single
-feature or failure mode or for running a comprehensive set of automated tests.
-The cache is keyed on both directory tree and test, so it won't confuse the
-unit tests with the integration tests, or a specific regression test.
+From the point of view of `git-test`, a test can be any shell command and a
+test is considered successful if that shell command returns with a `0` exit
+status. This means `git-test` can be used both for specialised tests of a
+single feature or failure mode or for running a comprehensive set of automated
+tests. The cache is keyed on both directory tree and test, so it won't confuse
+the unit tests with the integration tests, or a specific regression test.
 
 ## Motivation
 
@@ -26,24 +27,39 @@ Ideally, you should have a work flow where you run your unit tests whenever
 you save and run unit tests on all your local commits whenever you've done
 something with version control.
 
-For ease, `git-test` offers a few advantages over a simple for loop over a `git
-rev-list`:
+For ease, `git-test` offers a few advantages over a simple for loop over a
+`git rev-list`:
 
 - By default it spends some effort on working out which commits to test.
-- Cached results, which are keyed to tree contents, rather than commit. This means
-  that commits can be amended or reordered, but only content trees that have
-  never been tested before will be tested.
-- Separate pre- and post-action hooks, the results of which don't actually factor
-  into the test result. (Useful if cleaning fails if there is nothing to
-  clean, for instance.)
+- Cached results, which are keyed to tree contents, rather than commit. This
+  means that commits can be amended or reordered, but only content trees that
+  have never been tested before will be tested.
+- Separate pre- and post-action hooks, the results of which don't actually
+  factor into the test result. (Useful if cleaning fails if there is nothing
+  to clean, for instance.)
 - Configuration of housekeeping and verification steps using
     - `git config`,
     - environment variables or
     - command line arguments
-- Selective redo, for where you trust failures but not successes, vice versa, or
-  trust nothing.
+- Selective redo, for where you trust failures but not successes, vice versa,
+  or trust nothing.
 - Save output (both `STDOUT` and `STDERR`) from cleaning and verifying to
   an easily referenced symlink farm.
+
+
+## Configure
+
+Mostly just this:
+
+    git config test.verify "test command that returns nonzero on fail"
+
+to default to testing against origin/master:
+
+    git config test.branch origin/master
+
+to do the same, but for a single branch:
+
+    git config branch.mybranch.test parentbranch
 
 
 ## Self-Test
@@ -55,11 +71,11 @@ To try the test script with different shells:
         sh test.sh -s $sh
     done
 
-Note that since version 1.0.2, the shebang is set to `/bin/bash`. Other
-shells are now supported on a "patches welcome" basis. (This is largely
-because I couldn't find a shell I could run in my GNU/Linux environment that
-behaves like the OS X (FreeBSD?) `sh` shell, which has very different behaviour
-from all the others.)
+Note that since version 1.0.2, the shebang is set to `/bin/bash`. Other shells
+are now supported on a "patches welcome" basis. (This is largely because I
+couldn't find a shell I could run in my GNU/Linux environment that behaves
+like the OS X (FreeBSD?) `sh` shell, which has very different behaviour from
+all the others.)
 
 To regression test properly:
 
@@ -74,6 +90,9 @@ cache correctly.)
 
 ## Installation
 
+You can just have the `git-test` script in your `PATH`, but there are other
+options:
+
 ### Homebrew (on OS X)
 
 If you have [Homebrew](http://brew.sh) installed, you can install
@@ -85,8 +104,8 @@ If you have [Homebrew](http://brew.sh) installed, you can install
 
 Aside from the packaging, you can also install from source. It's a single
 POSIX shell script that uses core git, so all that's required for plain `git
-test` to work (besides git, of course) is that `git-test` needs to be somewhere
-in your `PATH` (or `GIT_EXEC_PATH`).
+test` to work (besides git, of course) is that `git-test` needs to be
+somewhere in your `PATH` (or `GIT_EXEC_PATH`).
 
 You can install from source by doing the following:
 
