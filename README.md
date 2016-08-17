@@ -9,7 +9,8 @@ The 99% example is simply:
 
 By default it uses heuristics to try to determine what "local commits" to
 test, but you can supply another ref spec. `git-test` looks at each commit and
-checks the hash of the directory tree against the cache.
+checks the hash of the directory tree against the cache. You can also configure
+a ref (usually a branch) to test against, per repo or or per branch.
 
 From the point of view of `git-test`, a test can be any shell command and a
 test is considered successful if that shell command returns with a `0` exit
@@ -44,6 +45,21 @@ For ease, `git-test` offers a few advantages over a simple for loop over a
   or trust nothing.
 - Save output (both `STDOUT` and `STDERR`) from cleaning and verifying to
   an easily referenced symlink farm.
+
+
+## Configure
+
+Mostly just this:
+
+    git config test.verify "test command that returns nonzero on fail"
+
+to default to testing against origin/master:
+
+    git config test.branch origin/master
+
+to do the same, but for a single branch:
+
+    git config branch.mybranch.test parentbranch
 
 
 ## Self-Test
