@@ -1,6 +1,6 @@
-.TH GIT-TEST "1" "September 2015" "git-test version 1.0.2" "User Commands"
+.TH GIT-TEST "1" "August 2016" "git-test version 1.0.4" "User Commands"
 .SH "NAME"
-git-test \- manual page for git-test version 1.0.2
+git-test \- manual page for git-test version 1.0.4
 .SH "SYNOPSIS"
 git test [options] [refs...]
 
@@ -12,7 +12,7 @@ Run tests on each distinct tree in a revision list.
 
 The 99% example is simply:
 .IP
-git test -v
+git test
 .PP
 
 If no refs are specified, the default operation is to test the commits on the
@@ -25,7 +25,7 @@ named origin, in a large project with many versions.
 This is currently not configurable, but if you want any other ref, you can
 just supply it:
 .IP
-git test -v HEAD ^jeff/development
+git test HEAD ^jeff/development
 .PP
 
 Note that ref exclusions are almost always necessary since not having them
@@ -44,7 +44,7 @@ dealing with this situation. (Besides the obvious, \fBfixing your tests.\fR)
 Running with the verbose option shows progress as it happens:
 .IP
 .nf
-$ git test -v
+$ git test
 the-branch ^origin/the-branch ^origin/master will test 2 commits
 iter commit  tree    result
 0000 83d611b 718c490 ... pass
@@ -54,7 +54,7 @@ iter commit  tree    result
 Immediately re-running the tests will just take the results from the cache:
 .IP
 .nf
-$ git test -v
+$ git test
 the-branch ^origin/the-branch ^origin/master will test 2 commits
 iter commit  tree    result
 0000 83d611b 718c490 ... pass (cached)
@@ -80,8 +80,16 @@ git config test.post "cp a.out a.out.\\$commit"
 Alternatively, these can be set through environment variables
 \fBGIT_TEST_PRE\fR, \fBGIT_TEST_POST\fR and \fBGIT_TEST_VERIFY\fR
 respectively.
+
+A default ref (usually a branch) to test against can be configured:
+.IP
+git config test.branch origin/release
 .PP
-.SS "OPTIONS"
+A default ref can also be set for a specific branch:
+.IP
+git config branch.myfeature.test origin/staging
+.PP
+.SH "OPTIONS"
 Available options are
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
@@ -106,7 +114,7 @@ test.post
 \fB\-\-verify\fR ...
 the command to run as test. Overrides the environment variable
 GIT_TEST_VERIFY and the git-config option test.verify
-.SS "ACTIONS"
+.SH "ACTIONS"
 .TP
 \fB\-\-clear\fR
 clear the results cache
@@ -158,9 +166,10 @@ commits will be cleared, even though those exact trees may appear in other
 commits. It is what was requested and doing anything else would likely be
 prohibitively expensive and very confusing.
 .SH "AUTHORS"
-Anders Eurenius <aes@spotify.com>
+Anders Eurenius <aes@eurenius.eu>
 .SH "COPYRIGHT"
 Copyright (C) 2015 Spotify AB
+Copyright (C) 2016 Anders Eurenius
 .SH "LICENSE"
 Apache License 2.0
 .SH "SEE ALSO"

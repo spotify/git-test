@@ -1,3 +1,23 @@
+git-test (1.0.4) unstable; urgency=medium
+
+  * Fix #10: gettext compatibility issue
+  * Fix #13: Lock directory misbehaviours
+  * Fix #14: Use require_clean_work_tree
+  * Make verbose the default
+  * Fix #9: test root branch
+  * Explain test root feature
+
+ -- Anders Eurenius <anders.eurenius@klarna.com>  Wed, 17 Aug 2016 16:20:16 +0200
+
+git-test (1.0.3) unstable; urgency=medium
+
+  * Add homebrew to install instructions
+  * Remove internal Spotify URLs from Arch PKGBUILD
+  * Fix #5: Allow file/s and branch/es with same name
+  * Shellcheck cleanliness
+
+ -- Anders Eurenius <anders.eurenius@klarna.com>  Wed, 17 Aug 2016 16:52:00 +0200
+
 git-test (1.0.2) unstable; urgency=low
 
   * Set shebang to /bin/bash and explain why
