@@ -1,0 +1,13 @@
+---
+engines:
+  fixme:
+    enabled: true
+  shellcheck:
+    enabled: true
+ratings:
+  paths:
+  - "git-test"
+  - "test.sh"
+  - "regress.sh"
+exclude_paths:
+- debian/
