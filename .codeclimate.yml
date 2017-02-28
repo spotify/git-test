@@ -4,6 +4,11 @@ engines:
     enabled: true
   shellcheck:
     enabled: true
+    exclude_fingerprints:
+    # Not following: git-sh-setup: openFile: does not exist
+    - ef0f5438541a18db4ee149a29ac3bb55
+    # Not following: git-sh-i18n: openFile: does not exist
+    - 0030d6ea8cbd79fd15d20f519deab495
 ratings:
   paths:
   - "git-test"
