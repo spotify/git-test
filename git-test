@@ -140,16 +140,18 @@ decide_refs() {
 	args="^${upstream#refs/*/}"
     fi
 
-    for remote in $(git remote) ; do
-	remote_master="$(git branch --list --remotes "$remote/master")"
-	if [ -n "$remote_master" ] ; then
-	    args="$args ^${remote_master#  }"
-	fi
-	remote_branch="$(git branch --list --remotes "$remote/$branch")"
-	if [ -n "$remote_branch" ] ; then
-	    args="$args ^${remote_branch#  }"
-	fi
-    done
+    if [ -z "$args" ]; then
+        for remote in $(git remote) ; do
+	    remote_master="$(git branch --list --remotes "$remote/master")"
+	    if [ -n "$remote_master" ] ; then
+		args="$args ^${remote_master#  }"
+	    fi
+	    remote_branch="$(git branch --list --remotes "$remote/$branch")"
+	    if [ -n "$remote_branch" ] ; then
+		args="$args ^${remote_branch#  }"
+	    fi
+	done
+    fi
 
     if [ -z "$args" ] ; then
 	gettext "Cowardly refusing to test the entire history.
