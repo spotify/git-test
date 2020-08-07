@@ -259,7 +259,7 @@ run_tests() {
     commits=""
     iteration=0
     verification="$(echo "$verify" | git hash-object --stdin)"
-    ver="$(git rev-parse --short "$verification")"
+    ver="$(git rev-parse --short=7 "$verification")"
 
     if [ -z "$GIT_QUIET" ]; then
 	gettext "iter | commit  | tree    | result"
@@ -270,8 +270,8 @@ run_tests() {
 
     for commit in "$@" ; do
 	tree=$(tree_of_commit "$commit")
-	small=$(git rev-parse --short "$tree")
-	short=$(git rev-parse --short "$commit")
+	small=$(git rev-parse --short=7 "$tree")
+	short=$(git rev-parse --short=7 "$commit")
 
 	cache_key="${small}_${ver}"
 
@@ -445,7 +445,7 @@ if [ $action = clear ] ; then
 
 	for commit in $commits; do
 	    tree=$(tree_of_commit "$commit")
-	    small=$(git rev-parse --short "$tree")
+	    small=$(git rev-parse --short=7 "$tree")
 	    rm -f "$cache"/"$small"_*_fail "$cache"/"$small"_*_pass
 	done
     fi
