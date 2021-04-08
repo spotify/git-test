@@ -154,6 +154,7 @@ decide_refs() {
     if [ -z "$args" ] ; then
 	gettext "Cowardly refusing to test the entire history.
 (If that's what you really want, you must specify at least HEAD)" >& $ERR
+        echo >& $ERR
         rc=5
     else
 	echo "$branch $args" | tr " " "$NL" | sort | uniq | tr "$NL" " "
@@ -335,6 +336,7 @@ parse_redo() {
 	redo=both
     else
 	gettext "Unknown redo mode requested"
+	echo
 	rc=1
 	exit $rc
     fi
@@ -434,6 +436,7 @@ if [ $action = clear ] ; then
 
 	if test 1 -gt "$count" ; then
 	    gettext "List of commits to clear is empty" 1>&2
+	    echo 1>&2
 	    exit
 	fi
 
@@ -476,6 +479,7 @@ count="$(echo "${commits[@]}" | wc -w)"
 
 if test 1 -gt "$count" ; then
     gettext 'List of commits to test is empty' 1>&2
+    echo 1>&2
     exit
 elif test -z "$GIT_QUIET" ; then
     printf "$(eval_gettext "%s will test %d commits\n")" "${refs[*]}" "$count"
