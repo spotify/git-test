@@ -31,7 +31,7 @@ s,shell=        shell to use [default: /bin/sh]
 
 eval "$(
     echo "$OPTIONS_SPEC" \
-	| git rev-parse --parseopt $parseopt_extra -- "$@" ||
+	| git rev-parse --parseopt "$(parseopt_extra)" -- "$@" ||
     echo exit $?
 )"
 
@@ -47,7 +47,6 @@ fail=0
 
 shshell=${shshell:-/bin/bash}
 
-total_argc=$#
 while [ $# != 0 ]
 do
     case $1 in
@@ -86,7 +85,7 @@ SUBJECT="$TMPDIR/subject/"
 
 rm -Rf "$SUBJECT"
 mkdir -p "$SUBJECT"
-cd "$SUBJECT"
+cd "$SUBJECT" || exit
 
 
 dot() {
@@ -96,7 +95,7 @@ dot() {
 	if [ -n "$1" ]; then echo "...pass" ; else echo "...fail"; fi
     fi
 
-    if [ $quit -gt 0 ] && ! [ -n "$1" ]; then
+    if [ $quit -gt 0 ] && [ -z "$1" ]; then
 	if [ $verb -lt 2 ]; then
 	    printf "\n%s\n" "$last"
 	fi
@@ -112,12 +111,12 @@ info() {
 }
 
 fail() {
-    fail=$(expr $fail + 1)
+    fail=$(("$fail" + 1))
     dot
 }
 
 pass() {
-    pass=$(expr $pass + 1)
+    pass=$(("$pass" + 1))
     dot "t"
 }
 
@@ -140,15 +139,15 @@ add_commit() {
 }
 
 get_tree() {
-    git rev-parse --short $(git cat-file -p $1 | grep tree | grep -o '[^ ]*$')
+    git rev-parse --short "$(git cat-file -p "$1" | grep tree | grep -o '[^ ]*$')"
 }
 
 setup_for_redo() {
     rm -rf .git/test-cache/*
-    touch .git/test-cache/${tree_a}_${ver}_pass
-    touch .git/test-cache/${tree_b}_${ver}_pass # flappy!
-    touch .git/test-cache/${tree_b}_${ver}_fail #
-    touch .git/test-cache/${tree_c}_${ver}_fail
+    touch .git/test-cache/"${tree_a}"_"${ver}"_pass
+    touch .git/test-cache/"${tree_b}"_"${ver}"_pass # flappy!
+    touch .git/test-cache/"${tree_b}"_"${ver}"_fail #
+    touch .git/test-cache/"${tree_c}"_"${ver}"_fail
 }
 
 unset GIT_TEST_CLEAN
@@ -239,7 +238,7 @@ add_commit "MOOAAR SUT!" "<o> fuuu"             >/dev/null 2>&1
 $PROJECT --clear                                >/dev/null 2>&1 ; check
 verify="grep SUT subject"
 verification="$(echo "$verify" | git hash-object --stdin)"
-ver="$(git rev-parse --short $verification)"
+ver="$(git rev-parse --short "$verification")"
 git config test.verify "$verify"
 
 tree_a=$(get_tree HEAD~3)
@@ -366,10 +365,10 @@ info "Check that selective --clear removes correct cache entries"
 git reset --hard long-history                        >out 2>err ; check
 git config test.verify "$verify"
 setup_for_redo
-touch .git/test-cache/${tree_d}_${ver}_fail
-ls .git/test-cache/*_*_* | wc -l | grep '^ *5 *$'    >/dev/null ; check
+touch .git/test-cache/"${tree_d}"_"${ver}"_fail
+find .git/test-cache/*_*_* | wc -l | grep '^ *5 *$'    >/dev/null ; check
 $PROJECT -v --clear  master~1 ^master~3              >out 2>err ; check
-ls .git/test-cache/*_*_* | wc -l | grep '^ *2 *$'    >/dev/null ; check
+find .git/test-cache/*_*_* | wc -l | grep '^ *2 *$'    >/dev/null ; check
 
 info "Should present actual ref spec and commit count"
 git branch upstream master~2                    >/dev/null 2>&1 ; check
